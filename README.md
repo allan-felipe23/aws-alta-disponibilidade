@@ -31,7 +31,64 @@ Com a implementação do BIA nesta arquitetura AWS, os principais pilares aplica
 
 ## 🧱 Arquitetura da Infraestrutura
 
-![Diagrama da Arquitetura](./diagrama.png)
+```mermaid
+graph TD
+    classDef publicSubnet fill:#e6f2ff,stroke:#0066cc,stroke-width:2px;
+    classDef privateSubnet fill:#f9e6ff,stroke:#9900cc,stroke-width:2px;
+    classDef vpc fill:#ffffff,stroke:#ff9900,stroke-width:2px;
+    classDef awsService fill:#ff9900,stroke:#333,stroke-width:1px,color:white;
+    classDef database fill:#3366cc,stroke:#333,stroke-width:1px,color:white;
+
+    User([👤 Usuário Externo]) -->|Internet| IGW[Gateway de Internet]
+    
+    subgraph VPC [VPC Customizada]
+        IGW --> ALB
+        
+        subgraph AZ1 [Availability Zone A]
+            subgraph Pub1 [Subnet Pública A]
+                ALB[Application Load Balancer]:::awsService
+                NAT1[NAT Gateway]:::awsService
+            end
+            
+            subgraph Priv1 [Subnet Privada A - Aplicação]
+                ECS1[ECS Fargate Task BIA]:::awsService
+            end
+            
+            subgraph PrivDB1 [Subnet Privada A - Banco]
+                RDS_M[(RDS PostgreSQL Master)]:::database
+            end
+        end
+        
+        subgraph AZ2 [Availability Zone B]
+            subgraph Pub2 [Subnet Pública B]
+                ALB_Node[ALB Node Secundário]:::awsService
+            end
+            
+            subgraph Priv2 [Subnet Privada B - Aplicação]
+                ECS2[ECS Fargate Task BIA]:::awsService
+            end
+            
+            subgraph PrivDB2 [Subnet Privada B - Banco]
+                RDS_S[(RDS PostgreSQL Standby)]:::database
+            end
+        end
+        
+        ALB -.-> ALB_Node
+        ALB -->|Tráfego HTTP| ECS1
+        ALB_Node -->|Tráfego HTTP| ECS2
+        
+        ECS1 -->|Queries SQL| RDS_M
+        ECS2 -->|Queries SQL| RDS_M
+        
+        RDS_M -.->|Failover / Sync| RDS_S
+        
+        ECS1 -.->|Acesso à Internet| NAT1
+    end
+    
+    CW((CloudWatch)):::awsService
+    ECS1 -.->|Logs| CW
+    ECS2 -.->|Logs| CW
+```
 
 > 💡 *O diagrama acima ilustra o fluxo de tráfego seguro: o usuário acessa o ALB nas subnets públicas, que por sua vez roteia o tráfego para os containers do ECS Fargate nas subnets privadas. O banco de dados RDS também fica protegido nas subnets privadas.*
 
