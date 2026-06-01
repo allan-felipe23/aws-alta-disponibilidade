@@ -51,7 +51,7 @@ graph TD
             end
             
             subgraph Priv1 [Subnet Privada A - Aplicação]
-                ECS1[ECS Fargate Task BIA]:::awsService
+                ECS1[ECS EC2 Task BIA]:::awsService
             end
             
             subgraph PrivDB1 [Subnet Privada A - Banco]
@@ -65,7 +65,7 @@ graph TD
             end
             
             subgraph Priv2 [Subnet Privada B - Aplicação]
-                ECS2[ECS Fargate Task BIA]:::awsService
+                ECS2[ECS EC2 Task BIA]:::awsService
             end
             
             subgraph PrivDB2 [Subnet Privada B - Banco]
@@ -120,7 +120,7 @@ Passo a passo resumido de como o ambiente foi construído na nuvem:
 
 ## 💡 Decisões Técnicas e Aprendizados
 
-- **Por que ECS Fargate e não instâncias EC2 cruas?** O Fargate remove o *overhead* de ter que gerenciar o sistema operacional, aplicar patches de segurança e configurar o Docker nos hosts. Foca-se 100% no container.
+- **Por que EC2 e não Fargate?** redução de custo e mais gerenciamento dos containers.
 - **Por que Multi-AZ no RDS?** É vital para sistemas em produção. Se um data center inteiro da AWS cair, o RDS promove automaticamente a réplica da outra AZ para master sem perda de dados.
 - **Isolamento de Rede:** O uso de subnets privadas com *NAT Gateway* permite que os containers do ECS baixem dependências da internet com segurança, sem que seus IPs fiquem expostos publicamente a potenciais ataques.
 
